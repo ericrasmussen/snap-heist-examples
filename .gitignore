@@ -1,0 +1,9 @@
+*.DS_Store
+.ghci
+.cabal-sandbox
+cabal.sandbox.config
+dist/
+log/
+site_key.txt
+\#*#
+*~
