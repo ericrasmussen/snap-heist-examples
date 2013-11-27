@@ -14,3 +14,5 @@ conditionally rendering text or conditionally injecting other templates. See
 src/handlers/ for standalone Snap handlers demonstrating different ways you
 can use Heist.
 
+You can read an intro and the original motivation for it in
+[this blog post](http://chromaticleaves.com/posts/the-great-template-heist.html).
