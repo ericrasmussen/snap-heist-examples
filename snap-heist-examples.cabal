@@ -35,6 +35,7 @@ Executable snap-heist-examples
     snap-loader-static        >= 0.9     && < 0.10,
     text                      >= 0.11    && < 0.12,
     time                      >= 1.1     && < 1.5,
+    transformers              >= 0.2     && < 0.4,
     xmlhtml                   >= 0.1
 
   if flag(old-base)
