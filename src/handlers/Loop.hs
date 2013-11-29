@@ -67,9 +67,7 @@ loopHandler = renderWithSplices "loop/tutorials" allTutorialSplices
 -- | These splices will be bound to templates/loop/tutorials.tpl via the
 -- loopHandler
 allTutorialSplices :: Splices (SnapletISplice App)
-allTutorialSplices = do
-  let ts = renderTutorials tutorials -- maybe namespace these?
-  "allTutorials" ## ts
+allTutorialSplices = "allTutorials" ## (renderTutorials tutorials)
 
 -- | This function maps over a list of Tutorials, creates splices from each,
 -- and binds the list of splices. When this is bound to "allTutorials" in
