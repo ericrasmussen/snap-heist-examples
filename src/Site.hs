@@ -24,6 +24,7 @@ import           Data.Monoid
 import qualified Loop as L
 import qualified Conditional as C
 import qualified LoopCompiled as LC
+import qualified ConditionalCompiled as CC
 
 ------------------------------------------------------------------------------
 -- | The application's routes.
@@ -31,6 +32,7 @@ routes :: [(ByteString, Handler App App ())]
 routes = [ ("/", indexHandler)
          -- compiled splices
          , ("/compiled/loop", LC.loopHandler)
+         , ("/compiled/conditional/text", CC.conditionalHandler)
          -- interpreted splices
          , ("/interpreted/loop", L.loopHandler)
          , ("/interpreted/conditional/text", C.conditionalHandler)
@@ -43,7 +45,7 @@ routes = [ ("/", indexHandler)
 -- | Compose all the compiled splices imported from the handler modules
 allCompiledSplices :: Monad n => Splices (C.Splice n)
 allCompiledSplices = mconcat [ LC.allTutorialSplices
-                             -- , other compiled splices to be added here
+                             , CC.tutorialSplices
                              ]
 
 ------------------------------------------------------------------------------
