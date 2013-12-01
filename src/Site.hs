@@ -47,8 +47,7 @@ routes = [ ("/", indexHandler)
 allCompiledSplices :: Monad n => Splices (C.Splice n)
 allCompiledSplices = mconcat [ LC.allTutorialSplices
                              , CC.tutorialSplices
-                             , CC.authorSplices
-                             , CC.authorInfoSplices
+                             , CC.allAuthorSplices
                              ]
 
 ------------------------------------------------------------------------------
