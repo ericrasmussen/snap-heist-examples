@@ -10,7 +10,9 @@
 module ConditionalCompiled
   ( conditionalHandler
   , tutorialSplices
-  --, conditionalTemplateHandler
+  , conditionalTemplateHandler
+  , authorSplices
+  , authorInfoSplices
   ) where
 
 ------------------------------------------------------------------------------
@@ -94,7 +96,6 @@ maybeAuthor t = case author t of
   Just a  -> a
 
 
-{-
 --------------------------------------------------------------------------------
 -- * A handler to demonstrate conditionally rendering an entire template and
 -- attaching it to a node.
@@ -102,20 +103,35 @@ maybeAuthor t = case author t of
 -- | Similar to conditionalHandler, except it conditionally inserts a rendered
 -- template instead of Text
 conditionalTemplateHandler :: Handler App App ()
-conditionalTemplateHandler =
-  renderWithSplices "conditional/authors" authorInfoSplices
+conditionalTemplateHandler = cRender "conditional/authors"
 
-authorInfoSplices :: Monad n => Splices (I.Splice n)
-authorInfoSplices = do
-  "authorA" ## authorTemplateSplice (author tutorialA)
-  "authorB" ## authorTemplateSplice (author tutorialB)
 
--- | Creates a splice from a template when we have an author name, otherwise
--- returns an empty list (note that Template is a type synonym for [Node], so an
--- empty list is the base case)
-authorTemplateSplice :: Monad n => Maybe T.Text -> I.Splice n
-authorTemplateSplice Nothing = return []
-authorTemplateSplice (Just a) =
-  I.callTemplateWithText "authorinfo" ("authorName" ## a)
+-- create a runtime list of maybe authors
+authorRuntimes :: Monad n => RuntimeSplice n [Maybe T.Text]
+authorRuntimes = return [Nothing, Just "MIGHTYBYTEEEEE"]
 
--}
+-- this has to be bound at the top level to be available when authorinfo is
+-- rendered
+-- but remember too we bound authorA and authorB separately, so we'd associate
+-- the fully rendered template with a separate tag, then make the rendered
+-- template a splice of something like <authorList/>
+authorInfoSplices :: Monad n => Splices (C.Splice n)
+authorInfoSplices = "allAuthors" ## (renderAuthors authorRuntimes)
+
+-- supporting function to render the authors
+renderAuthors :: Monad n => RuntimeSplice n [Maybe T.Text] -> C.Splice n
+renderAuthors = C.manyWithSplices C.runChildren splicesFromAuthor
+
+splicesFromAuthor :: Monad n => Splices (RuntimeSplice n (Maybe T.Text) -> C.Splice n)
+splicesFromAuthor = mapS (C.pureSplice . C.textSplice) $ do
+  "authorName" ## (const "HI")
+
+-- note that this does not need to be a maybe text necessarily, but it does need
+-- to be called/returned and bound to "authorName" as a Splice
+authorTemplateSplice :: Monad n => Maybe T.Text -> C.Splice n
+-- authorTemplateSplice Nothing = return [] -- base case? DList empty maybe
+authorTemplateSplice Nothing  = C.callTemplate "authorinfocompiled"
+authorTemplateSplice (Just a) = C.callTemplate "authorinfocompiled"
+
+authorSplices :: Monad n => Splices (C.Splice n)
+authorSplices = "authorA" ## authorTemplateSplice (Just "hi")
