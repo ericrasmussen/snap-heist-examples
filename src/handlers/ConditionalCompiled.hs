@@ -99,31 +99,25 @@ maybeAuthor t = case author t of
 -- * A handler to demonstrate conditionally rendering an entire template and
 -- attaching it to a node.
 
--- TODO: can we nest compiled splices? so authorA contains one set of splices,
--- authorB another, both using authorName internally. hm.
-
-
 -- | Similar to conditionalHandler, except it conditionally inserts a rendered
 -- template instead of Text
 conditionalTemplateHandler :: Handler App App ()
 conditionalTemplateHandler = cRender "conditional/authors"
 
--- creates a splice by calling a separate template
-authorTemplateSplice :: Monad n => C.Splice n
-authorTemplateSplice = C.callTemplate "authorinfo"
-
+-- top level splices used for rendering conditional/authors
 allAuthorSplices :: Monad n => Splices (C.Splice n)
 allAuthorSplices = do
-  "authorA" ## authorSplicesA
-  "authorB" ## authorSplicesB
+  "authorA" ## authorSplices tutorialA
+  "authorB" ## authorSplices tutorialB
 
--- creates authorInfo splices for the tutorialA runtime
-authorSplicesA :: Monad n => C.Splice n
-authorSplicesA = C.withSplices authorTemplateSplice splices tutorialA
+-- hacky way to return a compiled template splice or the base case
+authorTemplateSplice :: Monad n => Bool -> C.Splice n
+authorTemplateSplice False = C.runNodeList []
+authorTemplateSplice True = C.callTemplate "authorinfo"
+
+-- how can I choose authorTemplateSplice True or False based on the runtime
+-- value?
+authorSplices :: Monad n => RuntimeSplice n Tutorial -> C.Splice n
+authorSplices runtime = C.withSplices (authorTemplateSplice True) splices runtime
   where splices = do
-          "authorName" ## (C.pureSplice . C.textSplice $ const "HI THERE")
-
-authorSplicesB :: Monad n => C.Splice n
-authorSplicesB = C.withSplices authorTemplateSplice splices tutorialA
-  where splices = noSplices
-
+          "authorName" ## (C.pureSplice . C.textSplice $ maybeAuthor)
