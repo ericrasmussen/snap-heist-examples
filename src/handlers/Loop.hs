@@ -86,13 +86,13 @@ splicesFromTutorial :: Monad n => Tutorial -> Splices (I.Splice n)
 splicesFromTutorial t = do
   "tutorialTitle"  ## I.textSplice (title t)
   "tutorialURL"    ## I.textSplice (url   t)
-  "tutorialAuthor" ## tutorialAuthorSplice (author t)
+  "tutorialAuthor" ## I.textSplice (maybeAuthor t)
 
--- | If called with Just text, renders the author's name using the "author"
--- template. Otherwise returns an empty list, which is the base case for
--- a Template (note that Template is a type synonym for [Node])
-tutorialAuthorSplice :: Monad n => Maybe T.Text -> I.Splice n
-tutorialAuthorSplice Nothing = return []
-tutorialAuthorSplice (Just a) =
-  I.callTemplateWithText "author" ("authorName" ## a)
+-- | Returns conditional Text based on whether or not we know the tutorial's
+-- author
+maybeAuthor :: Tutorial -> T.Text
+maybeAuthor t = case author t of
+  Nothing -> ""
+  Just a  -> a
+
 
