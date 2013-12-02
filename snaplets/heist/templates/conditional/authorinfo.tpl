@@ -1,5 +1,4 @@
-<p>
-  And the author is:
-  <authorName/>
-</p>
-
+  <p>
+    And the author is:
+    <authorName/>
+  </p>

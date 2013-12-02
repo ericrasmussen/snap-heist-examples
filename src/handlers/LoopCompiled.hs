@@ -1,10 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
-
+{-# LANGUAGE OverloadedStrings, NoMonomorphismRestriction #-}
 ------------------------------------------------------------------------------
 -- | This module demonstrates how you can repeat a section of a template by
 -- mapping splice functions across a list of resources.
-module Loop
-  ( loopHandler
+module LoopCompiled
+  ( allTutorialSplices
+  , loopHandler
   ) where
 
 ------------------------------------------------------------------------------
@@ -12,9 +12,14 @@ import qualified Data.Text as T
 import           Snap.Snaplet (Handler)
 import           Snap.Snaplet.Heist
 import           Heist
-import qualified Heist.Interpreted as I
+import qualified Heist.Compiled as C
 ------------------------------------------------------------------------------
 import           Application
+
+import Control.Monad
+import Control.Monad.Trans
+import Control.Monad.Trans.State (get, StateT, StateT(..))
+
 --------------------------------------------------------------------------------
 
 -- simple data type for Tutorials
@@ -65,28 +70,39 @@ tutorials = [
 -- record may or may not be present.
 
 -- | This is the Snap Handler that will be associated with a route in
--- src/Site.hs
+-- src/Site.hs. Note that unlike the interpreted Loop module, we can't bind
+-- splices at render time. Instead, they're part of the Heist config when the
+-- Heist Snaplet is initiated. See src/Site.hs for details.
 loopHandler :: Handler App App ()
-loopHandler = renderWithSplices "loop/tutorials" allTutorialSplices
+loopHandler = cRender "loop/tutorials"
 
--- | These splices will be bound to templates/loop/tutorials.tpl via the
--- loopHandler
-allTutorialSplices :: Splices (SnapletISplice App)
-allTutorialSplices = "allTutorials" ## (renderTutorials tutorials)
+-- | Top level splice that will render a list of tutorials
+allTutorialSplices :: Monad n => Splices (C.Splice n)
+allTutorialSplices =
+  "allTutorials" ## (renderTutorials tutorialsRuntime)
 
--- | This function maps over a list of Tutorials, creates splices from each,
--- and binds the list of splices. When this is bound to "allTutorials" in
--- allTutorialSplices, all the nodes inside "allTutorials" will be repeated
--- once for each item in the Tutorial list
-renderTutorials :: [Tutorial] -> SnapletISplice App
-renderTutorials = I.mapSplices $ I.runChildrenWith . splicesFromTutorial
+-- | There is no equivalent for this in the interpreted Loop example, where we
+-- can more easily work with the Tutorial list directly. The purpose of this
+-- function is to create a RuntimeSplice with the Tutorial list so we can work
+-- it using compiled Heist functions.
+-- Note: you could use any monad here, including IO (or a monad transformer with
+-- an IO base) so you could retrieve these from a database, a file, or some
+-- other source.
+tutorialsRuntime :: Monad n => RuntimeSplice n [Tutorial]
+tutorialsRuntime = return tutorials
 
--- | Binds splices for a single Tutorial
-splicesFromTutorial :: Monad n => Tutorial -> Splices (I.Splice n)
-splicesFromTutorial t = do
-  "tutorialTitle"  ## I.textSplice (title t)
-  "tutorialURL"    ## I.textSplice (url   t)
-  "tutorialAuthor" ## I.textSplice (maybeAuthor t)
+-- | This function maps over a RuntimeSplice with a list of Tutorials, runs it
+-- against the inner nodes of the current node, and creates a splice containing
+-- all the rendered inner nodes for each Tutorial
+renderTutorials :: Monad n => RuntimeSplice n [Tutorial] -> C.Splice n
+renderTutorials = C.manyWithSplices C.runChildren splicesFromTutorial
+
+-- | Creates a compiled splice from a single Tutorial
+splicesFromTutorial :: Monad n => Splices (RuntimeSplice n Tutorial -> C.Splice n)
+splicesFromTutorial = mapS (C.pureSplice . C.textSplice) $ do
+  "tutorialTitle"  ## title
+  "tutorialURL"    ## url
+  "tutorialAuthor" ## maybeAuthor
 
 -- | Returns conditional Text based on whether or not we know the tutorial's
 -- author
