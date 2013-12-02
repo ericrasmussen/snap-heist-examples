@@ -45,16 +45,28 @@
 
     <!-- Sidebar -->
     <div class="large-3 columns">
-      <h5>Handlers</h5>
+      <h5>Interpreted Handlers</h5>
       <ul class="side-nav">
         <li>
-          <a href="/loop">Looping</a>
+          <a href="/interpreted/loop">Looping</a>
         </li>
         <li>
-          <a href="/conditional">Conditional Text</a>
+          <a href="/interpreted/conditional/text">Conditional Text</a>
         </li>
         <li>
-          <a href="/conditionaltemplate">Conditional Template</a>
+          <a href="/interpreted/conditional/template">Conditional Template</a>
+        </li>
+      </ul>
+      <h5>Compiled Handlers</h5>
+      <ul class="side-nav">
+        <li>
+          <a href="/compiled/loop">Looping</a>
+        </li>
+        <li>
+          <a href="/compiled/conditional/text">Conditional Text</a>
+        </li>
+        <li>
+          <a href="/compiled/conditional/template">Conditional Template</a>
         </li>
       </ul>
     </div>

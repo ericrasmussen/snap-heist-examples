@@ -37,17 +37,17 @@ tutorials = [
         title  = "Heist Template Tutorial"
       , url    = "http://snapframework.com/docs/tutorials/heist"
       , author = Nothing
-  }
+      }
   , Tutorial {
         title  = "Compiled Splices Tutorial"
       , url    = "http://snapframework.com/docs/tutorials/compiled-splices"
       , author = Nothing
-  }
+      }
   , Tutorial {
         title  = "Attribute Splices Tutorial"
       , url    = "http://snapframework.com/docs/tutorials/attribute-splices"
       , author = Nothing
-  }
+      }
   , Tutorial {
         title  = "Views, Controllers, and Heist"
       , url    = "http://softwaresimply.blogspot.com/2011/04/views-controllers-and-heist.html"
@@ -57,6 +57,11 @@ tutorials = [
         title  = "Looping and Control Flow in Heist"
       , url    = "http://softwaresimply.blogspot.com/2011/04/looping-and-control-flow-in-heist.html"
       , author = Just "mightybyte"
+      }
+  , Tutorial {
+        title = "Compiled Heist insight, with no Snap in sight"
+      , url = "https://www.fpcomplete.com/school/to-infinity-and-beyond/older-but-still-interesting/compiled-heist-insight-with-no-snap-in-sight"
+      , author = Just "Daniel Diaz Carrete"
       }
   ]
 
@@ -71,6 +76,7 @@ tutorials = [
 loopHandler :: Handler App App ()
 loopHandler = cRender "loop/tutorials"
 
+-- | Top level splice that will render a list of tutorials
 allTutorialSplices :: Monad n => Splices (C.Splice n)
 allTutorialSplices =
   "allTutorials" ## (renderTutorials tutorialsRuntime)
