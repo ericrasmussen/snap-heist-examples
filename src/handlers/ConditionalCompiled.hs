@@ -104,20 +104,24 @@ maybeAuthor t = case author t of
 conditionalTemplateHandler :: Handler App App ()
 conditionalTemplateHandler = cRender "conditional/authors"
 
--- | Top level splices used for rendering conditional/authors
+-- | Top level splices that will be bound to an empty value or a fully rendered
+-- template with local splices. We pass in a Maybe (RuntimeSplice n Tutorial) to
+-- authorSplices to make it easier to decide whether or not to render the
+-- template, because there is no easy way to directly inspect the return value
+-- of a RuntimeSplice computation.
 allAuthorSplices :: Monad n => Splices (C.Splice n)
 allAuthorSplices = do
   "authorA" ## authorSplices Nothing
   "authorB" ## authorSplices (Just tutorialB)
 
--- | Renders the authorinfo template. Intended to be used with withSplices.
-authorTemplateSplice :: Monad n => C.Splice n
-authorTemplateSplice = C.callTemplate "authorinfo"
-
 -- | Takes a Maybe RuntimeSplice and either returns nothing (a splice created
 -- from an empty node list) or returns a template splice using local
 -- "authorName" splices
 authorSplices :: Monad n => Maybe (RuntimeSplice n Tutorial) -> C.Splice n
-authorSplices Nothing = C.runNodeList []
+authorSplices Nothing        = C.runNodeList []
 authorSplices (Just runtime) = C.withSplices authorTemplateSplice local runtime
     where local = "authorName" ## (C.pureSplice . C.textSplice $ maybeAuthor)
+
+-- | Renders the authorinfo template. Intended to be used with withSplices.
+authorTemplateSplice :: Monad n => C.Splice n
+authorTemplateSplice = C.callTemplate "authorinfo"
