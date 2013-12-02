@@ -104,20 +104,20 @@ maybeAuthor t = case author t of
 conditionalTemplateHandler :: Handler App App ()
 conditionalTemplateHandler = cRender "conditional/authors"
 
--- top level splices used for rendering conditional/authors
+-- | Top level splices used for rendering conditional/authors
 allAuthorSplices :: Monad n => Splices (C.Splice n)
 allAuthorSplices = do
-  "authorA" ## authorSplices tutorialA
-  "authorB" ## authorSplices tutorialB
+  "authorA" ## authorSplices Nothing
+  "authorB" ## authorSplices (Just tutorialB)
 
--- hacky way to return a compiled template splice or the base case
-authorTemplateSplice :: Monad n => Bool -> C.Splice n
-authorTemplateSplice False = C.runNodeList []
-authorTemplateSplice True = C.callTemplate "authorinfo"
+-- | Renders the authorinfo template. Intended to be used with withSplices.
+authorTemplateSplice :: Monad n => C.Splice n
+authorTemplateSplice = C.callTemplate "authorinfo"
 
--- how can I choose authorTemplateSplice True or False based on the runtime
--- value?
-authorSplices :: Monad n => RuntimeSplice n Tutorial -> C.Splice n
-authorSplices runtime = C.withSplices (authorTemplateSplice True) splices runtime
-  where splices = do
-          "authorName" ## (C.pureSplice . C.textSplice $ maybeAuthor)
+-- | Takes a Maybe RuntimeSplice and either returns nothing (a splice created
+-- from an empty node list) or returns a template splice using local
+-- "authorName" splices
+authorSplices :: Monad n => Maybe (RuntimeSplice n Tutorial) -> C.Splice n
+authorSplices Nothing = C.runNodeList []
+authorSplices (Just runtime) = C.withSplices authorTemplateSplice local runtime
+    where local = "authorName" ## (C.pureSplice . C.textSplice $ maybeAuthor)
