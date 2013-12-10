@@ -19,7 +19,7 @@ Flag old-base
   manual: False
 
 Executable snap-heist-examples
-  hs-source-dirs: src, src/Handlers
+  hs-source-dirs: src, src/handlers
   main-is: Main.hs
 
   GHC-Options: -fwarn-unused-imports
