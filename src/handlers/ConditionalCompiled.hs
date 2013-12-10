@@ -12,6 +12,8 @@ module ConditionalCompiled
   , tutorialSplices
   , conditionalTemplateHandler
   , allAuthorSplices
+  , runtimeValueHandler
+  , allRuntimeValueSplices
   ) where
 
 ------------------------------------------------------------------------------
@@ -26,6 +28,7 @@ import           Snap.Snaplet.Session.Backends.CookieSession
 import           Snap.Util.FileServe
 import           Heist
 import qualified Heist.Compiled as C
+import qualified Heist.Compiled.LowLevel as LL
 ------------------------------------------------------------------------------
 import           Application
 --------------------------------------------------------------------------------
@@ -125,3 +128,67 @@ authorSplices (Just runtime) = C.withSplices authorTemplateSplice local runtime
 -- | Renders the authorinfo template. Intended to be used with withSplices.
 authorTemplateSplice :: Monad n => C.Splice n
 authorTemplateSplice = C.callTemplate "authorinfo"
+
+--------------------------------------------------------------------------------
+-- * Similar the above conditionalTemplateHandler, but showing how to inspect a
+-- runtime value.
+
+-- | Elevating Maybe Text values to RuntimeSplice values
+runtimeA :: Monad n => RuntimeSplice n (Maybe T.Text)
+runtimeA = return $ Just "a value"
+
+runtimeB :: Monad n => RuntimeSplice n (Maybe T.Text)
+runtimeB = return Nothing
+
+-- | Renders the template using any splices in our HeistConfig
+runtimeValueHandler :: Handler App App ()
+runtimeValueHandler = cRender "conditional/runtime"
+
+-- | The top level splices we export to our HeistConfig
+allRuntimeValueSplices :: Monad n => Splices (C.Splice n)
+allRuntimeValueSplices = do
+  "runtimeA" ## runtimeValue runtimeA
+  "runtimeB" ## runtimeValue runtimeB
+
+-- | Inspects a runtime value in order to decide which template to render
+runtimeValue :: Monad n => RuntimeSplice n (Maybe T.Text) -> C.Splice n
+runtimeValue runtime = do
+  -- a compiled splice for a static template (will be used in the Nothing case)
+  nothing     <- C.callTemplate "nothing"
+
+  -- create a new empty promise that can be filled in with a Text value
+  promise     <- LL.newEmptyPromise
+
+  -- instead of passing the RuntimeSplice directly to valueSplice, we pass in
+  -- a function capable of getting the value out of a promise
+  valueSplice <- getValueSplice (LL.getPromise promise)
+
+  -- The 'do' block below has a value of type:
+  --   RuntimeSplice n Builder -> DList (Chunk n)
+  --
+  -- This lets us extract the underlying value (Maybe Text) from the runtime
+  let builder = C.yieldRuntime $ do
+        value <- runtime
+        case value of
+          -- in the Nothing case we convert the template splice to a builder
+          Nothing -> C.codeGen nothing
+          -- in the Just case we put the extracted Text value in a promise
+          -- first, then convert the compiled value splice to a builder
+          Just v  -> do
+            LL.putPromise promise v
+            C.codeGen valueSplice
+
+  -- our builder has the type DList (Chunk n), and remember that:
+  --   type Splice n = HeistT n IO (DList (Chunk n))
+  -- so returning this value to the current monad finally creates the fully
+  -- compiled splice we needed
+  return builder
+
+-- | Note that here we take a runtime Text value, *not* Maybe Text. At this
+-- point we know we have a value so we can bind it to a local splice and call
+-- a template expecting a <value/> node
+getValueSplice :: Monad n => RuntimeSplice n T.Text -> C.Splice n
+getValueSplice = C.withSplices template local
+  where template = C.callTemplate "just_value"
+        local    = "value" ## C.pureSplice . C.textSplice $ id
+

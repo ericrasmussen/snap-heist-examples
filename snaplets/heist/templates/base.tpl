@@ -68,6 +68,9 @@
         <li>
           <a href="/compiled/conditional/template">Conditional Template</a>
         </li>
+        <li>
+          <a href="/compiled/conditional/runtime">Conditional Runtime</a>
+        </li>
       </ul>
     </div>
     <!-- End Sidebar -->

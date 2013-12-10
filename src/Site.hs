@@ -34,6 +34,7 @@ routes = [ ("/", indexHandler)
          , ("/compiled/loop", LC.loopHandler)
          , ("/compiled/conditional/text", CC.conditionalHandler)
          , ("/compiled/conditional/template", CC.conditionalTemplateHandler)
+         , ("/compiled/conditional/runtime", CC.runtimeValueHandler)
          -- interpreted splices
          , ("/interpreted/loop", L.loopHandler)
          , ("/interpreted/conditional/text", C.conditionalHandler)
@@ -48,6 +49,7 @@ allCompiledSplices :: Monad n => Splices (C.Splice n)
 allCompiledSplices = mconcat [ LC.allTutorialSplices
                              , CC.tutorialSplices
                              , CC.allAuthorSplices
+                             , CC.allRuntimeValueSplices
                              ]
 
 ------------------------------------------------------------------------------
